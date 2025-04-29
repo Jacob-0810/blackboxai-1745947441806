@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gobierno Escolar - Colegio Calatrava</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --color-primary: #0052cc; /* Blue from logo background */
+      --color-secondary: #fdb813; /* Yellow from logo text */
+      --color-accent1: #e03c31; /* Red from logo */
+      --color-accent2: #00a651; /* Green from logo */
+      --color-accent3: #f7d117; /* Yellow accent */
+    }
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background-color: var(--color-primary);
+      color: white;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
+  <div id="app" class="max-w-md w-full bg-white rounded-lg shadow-lg p-6 text-center text-gray-800">
+    <!-- Login View -->
+    <div id="loginView">
+      <img src="https://i.imgur.com/6Xq6XqP.png" alt="Logo Colegio Calatrava" class="mx-auto mb-6 w-40" />
+      <h1 class="text-2xl font-bold mb-4" style="color: var(--color-primary)">Acceso al Gobierno Escolar</h1>
+      <form id="loginForm" class="space-y-4">
+        <div>
+          <label for="email" class="block text-left font-semibold mb-1">Correo electrónico institucional</label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            placeholder="usuario@colegiocalatrava.edu.co"
+            required
+            class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+          />
+        </div>
+        <button
+          type="submit"
+          class="w-full bg-yellow-400 text-primary font-bold py-2 rounded hover:bg-yellow-500 transition"
+        >
+          Ingresar
+        </button>
+        <p id="errorMsg" class="text-red-600 mt-2 hidden"></p>
+      </form>
+    </div>
+
+    <!-- Category Selection View -->
+    <div id="categoryView" class="hidden">
+      <h2 class="text-xl font-semibold mb-4" style="color: var(--color-primary)">Seleccione su categoría</h2>
+      <div class="space-y-4">
+        <button class="categoryBtn w-full bg-yellow-400 text-primary font-bold py-2 rounded hover:bg-yellow-500 transition" data-category="personerito">Personerito (Primaria)</button>
+        <button class="categoryBtn w-full bg-yellow-400 text-primary font-bold py-2 rounded hover:bg-yellow-500 transition" data-category="personero">Personero Estudiantil (Bachillerato)</button>
+        <button class="categoryBtn w-full bg-yellow-400 text-primary font-bold py-2 rounded hover:bg-yellow-500 transition" data-category="profesores">Representante de Profesores</button>
+      </div>
+    </div>
+
+    <!-- Name Selection View -->
+    <div id="nameSelectionView" class="hidden">
+      <h2 class="text-xl font-semibold mb-4" style="color: var(--color-primary)">Seleccione su nombre</h2>
+      <div>
+        <label for="courseSelect" class="block text-left font-semibold mb-1">Curso</label>
+        <select id="courseSelect" class="w-full border border-gray-300 rounded px-3 py-2 mb-4"></select>
+      </div>
+      <div>
+        <label for="nameSelect" class="block text-left font-semibold mb-1">Nombre</label>
+        <select id="nameSelect" class="w-full border border-gray-300 rounded px-3 py-2"></select>
+      </div>
+      <button id="proceedVoteBtn" class="mt-4 w-full bg-yellow-400 text-primary font-bold py-2 rounded hover:bg-yellow-500 transition">Continuar</button>
+    </div>
+
+    <!-- Voting View -->
+    <div id="votingView" class="hidden">
+      <h2 class="text-xl font-semibold mb-4" style="color: var(--color-primary)">Seleccione un bloque</h2>
+      <div id="blocksContainer" class="space-y-4"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { bachilleratoStudents } from './students.js';
+    import { candidateBlocks } from './blocks.js';
+
+    const loginView = document.getElementById('loginView');
+    const categoryView = document.getElementById('categoryView');
+    const nameSelectionView = document.getElementById('nameSelectionView');
+    const votingView = document.getElementById('votingView');
+    const loginForm = document.getElementById('loginForm');
+    const errorMsg = document.getElementById('errorMsg');
+    const courseSelect = document.getElementById('courseSelect');
+    const nameSelect = document.getElementById('nameSelect');
+    const proceedVoteBtn = document.getElementById('proceedVoteBtn');
+    const blocksContainer = document.getElementById('blocksContainer');
+
+    let selectedCategory = null;
+    let userEmail = null;
+    let selectedVoterName = null;
+    let selectedBlock = null;
+
+    loginForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const email = loginForm.email.value.trim().toLowerCase();
+      const domain = '@colegiocalatrava.edu.co';
+      if (!email.endsWith(domain)) {
+        errorMsg.textContent = 'Solo se permiten correos con dominio @colegiocalatrava.edu.co';
+        errorMsg.classList.remove('hidden');
+        return;
+      }
+      errorMsg.classList.add('hidden');
+      userEmail = email;
+      loginView.classList.add('hidden');
+      categoryView.classList.remove('hidden');
+    });
+
+    document.querySelectorAll('.categoryBtn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        selectedCategory = btn.getAttribute('data-category');
+        categoryView.classList.add('hidden');
+        if (selectedCategory === 'personero') {
+          // Load bachillerato students courses
+          loadCourses(Object.keys(bachilleratoStudents));
+          nameSelectionView.classList.remove('hidden');
+        } else {
+          // For now, show placeholder message for other categories
+          alert('Funcionalidad para esta categoría aún no implementada.');
+          categoryView.classList.remove('hidden');
+        }
+      });
+    });
+
+    function loadCourses(courses) {
+      courseSelect.innerHTML = '';
+      courses.forEach(course => {
+        const option = document.createElement('option');
+        option.value = course;
+        option.textContent = course;
+        courseSelect.appendChild(option);
+      });
+      loadNames(courseSelect.value);
+    }
+
+    function loadNames(course) {
+      nameSelect.innerHTML = '';
+      const names = bachilleratoStudents[course] || [];
+      names.forEach(name => {
+        const option = document.createElement('option');
+        option.value = name;
+        option.textContent = name;
+        nameSelect.appendChild(option);
+      });
+    }
+
+    courseSelect.addEventListener('change', () => {
+      loadNames(courseSelect.value);
+    });
+
+    proceedVoteBtn.addEventListener('click', () => {
+      const selectedName = nameSelect.value;
+      if (!selectedName) {
+        alert('Por favor seleccione su nombre.');
+        return;
+      }
+      selectedVoterName = selectedName;
+      nameSelectionView.classList.add('hidden');
+      showBlocks();
+      votingView.classList.remove('hidden');
+    });
+
+    function showBlocks() {
+      blocksContainer.innerHTML = '';
+      candidateBlocks.forEach(block => {
+        const blockDiv = document.createElement('div');
+        blockDiv.className = 'border border-gray-300 rounded p-4 cursor-pointer hover:bg-yellow-100';
+        blockDiv.textContent = block.name;
+        blockDiv.addEventListener('click', () => {
+          selectedBlock = block;
+          showProposals(block);
+        });
+        blocksContainer.appendChild(blockDiv);
+      });
+    }
+
+    function showProposals(block) {
+      votingView.innerHTML = `
+        <h2 class="text-xl font-semibold mb-4" style="color: var(--color-primary)">Propuestas de ${block.name}</h2>
+        <div id="proposalsContainer" class="space-y-4"></div>
+        <button id="backToBlocksBtn" class="mt-4 bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded hover:bg-gray-400">Volver a bloques</button>
+      `;
+      const proposalsContainer = document.getElementById('proposalsContainer');
+      block.proposals.forEach((proposal, index) => {
+        const proposalDiv = document.createElement('div');
+        proposalDiv.className = 'border border-gray-300 rounded p-3 cursor-pointer hover:bg-yellow-100';
+        proposalDiv.textContent = proposal;
+        proposalDiv.addEventListener('click', () => {
+          submitVote(block.id, index);
+        });
+        proposalsContainer.appendChild(proposalDiv);
+      });
+      // Fourth option: all proposals are good
+      const allGoodDiv = document.createElement('div');
+      allGoodDiv.className = 'border border-gray-300 rounded p-3 cursor-pointer hover:bg-yellow-100 font-semibold';
+      allGoodDiv.textContent = 'Todas las propuestas me parecen buenas';
+      allGoodDiv.addEventListener('click', () => {
+        submitVote(block.id, -1);
+      });
+      proposalsContainer.appendChild(allGoodDiv);
+
+      document.getElementById('backToBlocksBtn').addEventListener('click', () => {
+        votingView.innerHTML = '';
+        showBlocks();
+      });
+    }
+
+    function submitVote(blockId, proposalIndex) {
+      alert(`Voto registrado para bloque ${blockId}, propuesta ${proposalIndex === -1 ? 'Todas las propuestas' : proposalIndex + 1}\n\nGracias por votar, ${selectedVoterName}!`);
+      // TODO: Enviar voto al backend y evitar votos múltiples
+      // Por ahora, reiniciar la app
+      votingView.innerHTML = '';
+      votingView.classList.add('hidden');
+      loginView.classList.remove('hidden');
+    }
+  </script>
+</body>
+</html>
